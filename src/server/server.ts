@@ -2,21 +2,54 @@ import express from "express";
 import http from "http";
 import Websocket from "ws";
 
-// Types
+/* Types */
 import { AddressInfo } from "net";
 
-// Setup
+/* Setup */
 const app = express();
 const server = http.createServer(app);
-const wsServer = new Websocket.Server({ server });
+const wss = new Websocket.Server({ server });
 
-wsServer.on("connection", ws => {
+/* Utils */
+// Broadcast to all connected WebSockets except for the server itself
+const broadcast = (ws: Websocket, msg: string) => {
+  wss.clients.forEach(client => {
+    if (client === ws || client.readyState !== Websocket.OPEN) {
+      return;
+    }
+
+    client.send(`@all: ${msg}`);
+  });
+};
+
+wss.on("connection", ws => {
   // Send on connection
   ws.send("WebSocket server started.");
 
-  ws.on("message", msg => {
-    console.log("received: %s", msg);
-    ws.send(`Message received: ${msg}`);
+  ws.on("message", (data: string) => {
+    let json;
+
+    try {
+      json = JSON.parse(data);
+
+      if (!json.message) {
+        ws.send("Message field is required and missing.");
+
+        return;
+      }
+    } catch (err) {
+      ws.send(`Cannot parse data, error: ${err.message}`);
+
+      return;
+    }
+
+    if (json.type === "broadcast") {
+      broadcast(ws, json.message);
+
+      return;
+    }
+
+    ws.send(`Message received: ${json.message}`);
   });
 });
 
