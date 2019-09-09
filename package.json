@@ -6,10 +6,11 @@
   "main": "./src/index.js",
   "license": "MIT",
   "scripts": {
-    "develop": "tsc && node build/server/server.js",
+    "develop": "node --inspect -r ts-node/register src/server/server.ts",
     "develop:watch": "./node_modules/nodemon/bin/nodemon.js",
     "start": "npm run develop",
     "start:watch": "npm run develop:watch",
+    "build": "tsc",
     "test": "mocha -r ts-node/register src/**/*.spec.ts",
     "test:watch": "mocha -r ts-node/register src/**/*.spec.ts --watch src/**/*.spec.ts --watch-extensions ts"
   },
