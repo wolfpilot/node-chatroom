@@ -5,6 +5,11 @@ import Websocket from "ws";
 /* Types */
 import { AddressInfo } from "net";
 
+interface IWebsocket extends Websocket {
+  isAlive?: boolean;
+  missedHeartbeats?: number;
+}
+
 /* Setup */
 const app = express();
 const server = http.createServer(app);
@@ -22,9 +27,54 @@ const broadcast = (ws: Websocket, msg: string) => {
   });
 };
 
-wss.on("connection", ws => {
+const keepAlive = (ws: IWebsocket) => {
+  ws.isAlive = true;
+  ws.missedHeartbeats = 0;
+};
+
+// Detect broken connections. For more info, see:
+// https://github.com/websockets/ws#how-to-detect-and-close-broken-connections
+setInterval(() => {
+  if (!wss.clients.size) {
+    return;
+  }
+
+  wss.clients.forEach((client: IWebsocket) => {
+    if (
+      typeof client.isAlive === "undefined" ||
+      typeof client.missedHeartbeats === "undefined"
+    ) {
+      return;
+    }
+
+    try {
+      if (client.missedHeartbeats >= 3) {
+        throw new Error("Too many missed heartbeats.");
+      }
+
+      if (client.isAlive === false) {
+        return client.terminate();
+      }
+
+      client.isAlive = false;
+      client.missedHeartbeats++;
+      client.ping();
+    } catch (err) {
+      console.warn(`Closing connection. Reason: ${err.message}`);
+
+      client.close();
+    }
+  });
+}, 10000);
+
+wss.on("connection", (ws: IWebsocket) => {
   // Send on connection
   ws.send("WebSocket server started.");
+
+  ws.isAlive = true;
+  ws.missedHeartbeats = 0;
+
+  ws.on("pong", () => keepAlive(ws));
 
   ws.on("message", (data: string) => {
     let json;
