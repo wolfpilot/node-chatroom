@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+
 import express from "express";
 import http from "http";
 import Websocket from "ws";
@@ -11,9 +13,17 @@ interface IWebsocket extends Websocket {
 }
 
 /* Setup */
+dotenv.config();
+
+const SERVER_PORT = parseInt(process.env.SERVER_PORT!, 10);
+const WEBSOCKETS_PORT = parseInt(process.env.WEBSOCKETS_PORT!, 10);
+
 const app = express();
 const server = http.createServer(app);
-const wss = new Websocket.Server({ server });
+const wss = new Websocket.Server({
+  port: WEBSOCKETS_PORT,
+  server
+});
 
 /* Utils */
 // Broadcast to all connected WebSockets except for the server itself
@@ -103,10 +113,13 @@ wss.on("connection", (ws: IWebsocket) => {
   });
 });
 
-server.listen(process.env.SERVER_PORT, () => {
+server.listen(SERVER_PORT, () => {
   const { port } = server.address() as AddressInfo;
 
-  console.log(`Server started on port: ${port}`);
+  console.log("\n");
+  console.log(`🔥  Server started on port: ${port}`);
+  console.log(`🔥  Websockets started on port: ${WEBSOCKETS_PORT}`);
+  console.log("\n");
 });
 
 export default server;
