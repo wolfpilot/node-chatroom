@@ -6,11 +6,10 @@ import Websocket from "ws";
 
 /* Types */
 import { AddressInfo } from "net";
+import { IWebsocket, IMessage } from "../types/";
 
-interface IWebsocket extends Websocket {
-  isAlive?: boolean;
-  missedHeartbeats?: number;
-}
+// Utils
+import * as handlers from "./utils/handlers";
 
 /* Setup */
 dotenv.config();
@@ -26,20 +25,23 @@ const wss = new Websocket.Server({
 });
 
 /* Utils */
-// Broadcast to all connected WebSockets except for the server itself
-const broadcast = (ws: Websocket, msg: string) => {
-  wss.clients.forEach(client => {
-    if (client === ws || client.readyState !== Websocket.OPEN) {
-      return;
-    }
-
-    client.send(`@all: ${msg}`);
-  });
-};
-
 const keepAlive = (ws: IWebsocket) => {
   ws.isAlive = true;
   ws.missedHeartbeats = 0;
+};
+
+const handleSocketRequest = (
+  wss: Websocket.Server,
+  ws: IWebsocket,
+  message: IMessage
+) => {
+  switch (message.type) {
+    case "broadcast":
+      handlers.broadcast(wss, ws, message.text);
+      break;
+    default:
+      handlers.echo(ws, message.text);
+  }
 };
 
 // Detect broken connections. For more info, see:
@@ -92,24 +94,18 @@ wss.on("connection", (ws: IWebsocket) => {
     try {
       json = JSON.parse(data);
 
-      if (!json.message) {
-        ws.send("Message field is required and missing.");
+      if (!json.text) {
+        ws.send("Text field is required and missing.");
 
         return;
       }
     } catch (err) {
-      ws.send(`Cannot parse data, error: ${err.message}`);
+      ws.send(`Cannot parse data, error: ${err.text}`);
 
       return;
     }
 
-    if (json.type === "broadcast") {
-      broadcast(ws, json.message);
-
-      return;
-    }
-
-    ws.send(`Message received: ${json.message}`);
+    handleSocketRequest(wss, ws, json);
   });
 });
 
