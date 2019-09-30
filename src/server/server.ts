@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import express from "express";
 import http from "http";
 import Websocket from "ws";
+import { v4 as uuid } from "uuid";
 
 /* Types */
 import { AddressInfo } from "net";
@@ -52,6 +53,7 @@ wss.on("connection", (ws: IWebsocket) => {
   // Send on connection
   ws.send("WebSocket server started.");
 
+  ws.id = uuid();
   ws.isAlive = true;
   ws.missedHeartbeats = 0;
 
