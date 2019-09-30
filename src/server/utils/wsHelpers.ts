@@ -3,6 +3,18 @@ import Websocket from "ws";
 // Types
 import { IWebsocket } from "../../types";
 
+// Utils
+const findClientByUserName = (userName: string) => {
+  if (!users.size) {
+    return;
+  }
+
+  return [...users.values()].find((user: any) => user.userName === userName);
+};
+
+// Map of connected clients
+const users = new Map();
+
 // Detect broken connections. For more info, see:
 // https://github.com/websockets/ws#how-to-detect-and-close-broken-connections
 export const checkHeartbeat = (wss: Websocket.Server) => {
@@ -36,6 +48,21 @@ export const checkHeartbeat = (wss: Websocket.Server) => {
       client.close();
     }
   });
+};
+
+// Register user in current chat room
+export const registerUser = (ws: IWebsocket, userName: string) => {
+  const userExists = findClientByUserName(userName);
+
+  if (userExists) {
+    ws.send(`User ${userName} already exists, please pick a new user name.`);
+
+    return;
+  }
+
+  users.set(ws.id, { ws, userName });
+
+  ws.send(`User ${userName} registered successfully!`);
 };
 
 // Broadcast to all connected WebSockets except for the server itself

@@ -41,6 +41,8 @@ const handleSocketRequest = (
   message: IMessage
 ) => {
   switch (message.type) {
+    case "register":
+      wsHelpers.registerUser(ws, message.text);
     case "broadcast":
       wsHelpers.broadcast(wss, ws, message.text);
       break;
