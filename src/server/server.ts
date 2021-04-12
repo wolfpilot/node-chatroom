@@ -25,7 +25,7 @@ const app = express();
 const server = http.createServer(app);
 const wss = new Websocket.Server({
   port: WEBSOCKETS_PORT,
-  server
+  server,
 });
 
 /* Utils */

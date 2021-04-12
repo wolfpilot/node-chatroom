@@ -6,13 +6,13 @@
   "main": "./src/index.js",
   "license": "MIT",
   "scripts": {
-    "develop": "node --inspect -r ts-node/register src/server/server.ts",
-    "develop:watch": "./node_modules/nodemon/bin/nodemon.js",
-    "start": "npm run develop",
-    "start:watch": "npm run develop:watch",
+    "develop": "node --inspect --experimental-specifier-resolution=node --loader ts-node/esm src/server/server.ts",
+    "develop:watch": "nodemon",
+    "start": "yarn develop",
+    "start:watch": "yarn develop:watch",
     "build": "tsc",
-    "test": "mocha -r ts-node/register src/**/*.spec.ts",
-    "test:watch": "mocha -r ts-node/register src/**/*.spec.ts --watch src/**/*.spec.ts --watch-extensions ts"
+    "test": "mocha -r ts-node/register --extensions ts --watch --watch-files src 'src/**/*.spec.ts'",
+    "test:watch": "mocha -r ts-node/register --extensions ts --watch --watch-files src 'src/**/*.spec.ts' --watch-extensions ts"
   },
   "dependencies": {
     "@types/chai": "^4.2.0",
